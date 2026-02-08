@@ -1,0 +1,2 @@
+﻿origin	https://github.com/buzzdotsui/Auto-Recon.git (fetch)
+origin	https://github.com/buzzdotsui/Auto-Recon.git (push)
