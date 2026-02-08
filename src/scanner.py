@@ -1,36 +1,46 @@
+
 import os
 import subprocess
-import json
+import logging
 from datetime import datetime
+from typing import Optional
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class NmapScanner:
-    def __init__(self, target, ports="1-1000"):
+    def __init__(self, target: str, ports: str = "1-1000", output_dir: str = "scans"):
         self.target = target
         self.ports = ports
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.scan_file = f"scans/{self.target}_{self.timestamp}.xml"
+        self.output_dir = output_dir
+        self.scan_file = os.path.join(self.output_dir, f"{self.target}_{self.timestamp}.xml")
 
-    def run_scan(self):
+    def run_scan(self) -> str:
         """Runs Nmap scan on target"""
-        print(f"[*] Starting scan on {self.target}...")
+        os.makedirs(self.output_dir, exist_ok=True)
+        logger.info(f"Starting scan on {self.target}...")
+        
         command = [
             "nmap", "-p", self.ports, "-sV", "-oX", self.scan_file, self.target
         ]
         
-        # In a real environment, we'd run the command. 
-        # For portfolio purposes, we'll simulate output if nmap isn't installed.
         try:
+            # Check if nmap is installed
+            subprocess.run(["nmap", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            # Run the actual scan
             subprocess.run(command, check=True)
-            print(f"[+] Scan completed. Saved to {self.scan_file}")
+            logger.info(f"Scan completed. Saved to {self.scan_file}")
             return self.scan_file
-        except FileNotFoundError:
-            print("[!] Nmap not installed. Simulating scan result...")
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            logger.warning("Nmap not found or failed. Simulating scan result...")
             self._simulate_scan()
             return self.scan_file
 
     def _simulate_scan(self):
         """Creates dummy XML for demonstration"""
-        os.makedirs("scans", exist_ok=True)
         dummy_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <nmaprun scanner="nmap" args="nmap -p {self.ports} -sV -oX {self.scan_file} {self.target}" start="1670000000">
 <host>
@@ -45,6 +55,7 @@ class NmapScanner:
         
         with open(self.scan_file, "w") as f:
             f.write(dummy_xml)
+        logger.info(f"Simulated scan saved to {self.scan_file}")
 
 if __name__ == "__main__":
     scanner = NmapScanner("192.168.1.1")
